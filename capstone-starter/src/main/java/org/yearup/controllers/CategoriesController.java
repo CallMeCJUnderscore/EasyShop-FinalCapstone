@@ -54,19 +54,20 @@ public class CategoriesController
     @PreAuthorize("permitAll()")
     public Category getById(@PathVariable int id)
     {
+        Category category = null;
         try
         {
-            var category = categoryDao.getById(id);
-
-            if(category == null)
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-
-            return category;
+            category = categoryDao.getById(id);
         }
         catch(Exception ex)
         {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
         }
+
+        if(category == null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+        return category;
 
     }
 
@@ -133,12 +134,12 @@ public class CategoriesController
     {
         try
         {
-
+            categoryDao.delete(id);
         }
         catch(Exception ex)
         {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
         }
-        categoryDao.delete(id);
+
     }
 }
