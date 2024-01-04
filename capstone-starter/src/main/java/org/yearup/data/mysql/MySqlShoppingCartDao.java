@@ -37,7 +37,7 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
     @Override
     public ShoppingCart getByUserId(int userID) {
         ShoppingCart shoppingCart = new ShoppingCart();
-        String query = "SELECT p.* FROM shopping_cart s " +
+        String query = "SELECT p.*, s.quantity FROM shopping_cart s " +
                 "JOIN products p " +
                 "ON s.product_id = p.product_id " +
                 "WHERE s.user_id = ?";
@@ -65,9 +65,7 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
         String query;
         ShoppingCart shoppingCart = this.getByUserId(userID);
 
-
         //Check to see if item is already in cart
-
             //if item already in cart
             if (shoppingCart.contains(productID)){
                 ShoppingCartItem item = shoppingCart.get(productID);
@@ -78,6 +76,7 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
                     PreparedStatement preparedStatement = connection.prepareStatement(query);
                     preparedStatement.setInt(1, newQuantity);
                     preparedStatement.setInt(2, userID);
+                    preparedStatement.setInt(3, productID);
                     int rows = preparedStatement.executeUpdate();
                     if (rows == 0) {
                         throw new SQLException("Update failed, no rows affected!");
@@ -95,11 +94,17 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
                     preparedStatement.setInt(1, productID);
 
                     ResultSet resultSet = preparedStatement.executeQuery();
-                    while(resultSet.next()){
+                    if(resultSet.next()){
                         ShoppingCartItem shoppingCartItem = new ShoppingCartItem();
                         shoppingCartItem.setProduct(mapRow(resultSet));
                         shoppingCartItem.setQuantity(1);
                         shoppingCart.add(shoppingCartItem);
+
+                        query = "INSERT INTO shopping_cart (user_id, product_id, quantity) VALUES (?,?,1)";
+                        preparedStatement=connection.prepareStatement(query);
+                        preparedStatement.setInt(1, userID);
+                        preparedStatement.setInt(2, productID);
+                        preparedStatement.executeUpdate();
                     }
                 }
                 catch (SQLException e){
@@ -161,7 +166,6 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
         String imageURL = resultSet.getString("image_url");
         int stock = resultSet.getInt("stock");
         boolean featured = resultSet.getInt("featured") != 0; //Sets to false if not featured, true if it is
-
         return new Product(productID, name, price, categoryID, description, color, stock, featured, imageURL);
     }
 }
