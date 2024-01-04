@@ -120,7 +120,6 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
         try(Connection connection = getConnection()){
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, userID);
-            preparedStatement.executeUpdate();
 
             int rows = preparedStatement.executeUpdate();
 

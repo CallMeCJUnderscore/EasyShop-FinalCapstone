@@ -55,8 +55,6 @@ public class ShoppingCartController
         {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
         }
-        if(shoppingCart == null)
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 
         return shoppingCart;
     }
