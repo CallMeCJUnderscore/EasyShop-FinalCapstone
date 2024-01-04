@@ -9,6 +9,7 @@ import org.yearup.data.ProductDao;
 import org.yearup.data.ShoppingCartDao;
 import org.yearup.data.UserDao;
 import org.yearup.models.ShoppingCart;
+import org.yearup.models.ShoppingCartItem;
 import org.yearup.models.User;
 
 import java.security.Principal;
@@ -37,6 +38,7 @@ public class ShoppingCartController
     @PreAuthorize("hasRole('ROLE_USER')")
     public ShoppingCart getCart(Principal principal)
     {
+        ShoppingCart shoppingCart = null;
         try
         {
             // get the currently logged in username
@@ -46,20 +48,27 @@ public class ShoppingCartController
             int userId = user.getId();
 
             // use the shoppingcartDao to get all items in the cart and return the cart
-            return shoppingCartDao.getByUserId(userId);
+            shoppingCart = shoppingCartDao.getByUserId(userId);
+
         }
         catch(Exception e)
         {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
         }
+        if(shoppingCart == null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+        return shoppingCart;
     }
 
 
     // add a POST method to add a product to the cart - the url should be
     // https://localhost:8080/cart/products/15 (15 is the productId to be added
-    @PostMapping("/{productID}")
+    @PostMapping("/products/{productID}")
     @PreAuthorize("hasRole('ROLE_USER')")
-    public ShoppingCart addProduct(Principal principal, @PathVariable int productID){
+    @ResponseStatus(HttpStatus.CREATED)
+    public ShoppingCart addItem(Principal principal, @PathVariable int productID){
+        ShoppingCart shoppingCart = null;
         try
         {
             // get the currently logged in username
@@ -69,22 +78,65 @@ public class ShoppingCartController
             int userId = user.getId();
 
             // use the shoppingcartDao to get all items in the cart and return the cart
-            return shoppingCartDao.addProduct(userId, productID);
+            shoppingCart = shoppingCartDao.addProduct(userId, productID);
         }
         catch(Exception e)
         {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
         }
+        if(shoppingCart == null)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+
+        return shoppingCart;
     }
 
 
     // add a PUT method to update an existing product in the cart - the url should be
     // https://localhost:8080/cart/products/15 (15 is the productId to be updated)
     // the BODY should be a ShoppingCartItem - quantity is the only value that will be updated
+    @PutMapping("/products/{userID}")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    public ShoppingCart updateItemQuantity(Principal principal, @PathVariable int productID, @RequestBody ShoppingCartItem shoppingCartItem){
+        try
+        {
+            // get the currently logged in username
+            String userName = principal.getName();
+            // find database user by userId
+            User user = userDao.getByUserName(userName);
+            int userId = user.getId();
 
+            // use the shoppingcartDao to get all items in the cart and return the cart
+        }
+        catch(Exception e)
+        {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
+        }
+        return null;
+    }
 
 
     // add a DELETE method to clear all products from the current users cart
     // https://localhost:8080/cart
 
+    @DeleteMapping("")
+    @PreAuthorize("hasRole('ROLE_USER')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public ShoppingCart clearCart(Principal principal)
+    {
+        try
+        {
+            // get the currently logged in username
+            String userName = principal.getName();
+            // find database user by userId
+            User user = userDao.getByUserName(userName);
+            int userId = user.getId();
+
+            // use the shoppingcartDao to get all items in the cart and return the cart
+        }
+        catch(Exception e)
+        {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
+        }
+        return null;
+    }
 }

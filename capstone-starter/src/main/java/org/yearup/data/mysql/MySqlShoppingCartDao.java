@@ -62,31 +62,73 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
 
     @Override
     public ShoppingCart addProduct(int userID, int productID) {
-        ShoppingCart shoppingCart = new ShoppingCart();
-        shoppingCart = this.getByUserId(userID);
-        for(ShoppingCartItem item : shoppingCart.getItems().values()){
-            if (item.getProductId() == productID){
-                item.setQuantity(item.getQuantity()+1);
-                return shoppingCart;
-            }
-        }
-        String query = "SELECT * FROM products WHERE product_id = ?";
-        try(Connection connection = getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, productID);
+        String query = "";
+        ShoppingCart shoppingCart = this.getByUserId(userID);
 
-            ResultSet resultSet = preparedStatement.executeQuery();
-            if(resultSet.next()){
-                ShoppingCartItem shoppingCartItem = new ShoppingCartItem();
-                shoppingCartItem.setProduct(mapRow(resultSet));
-                shoppingCart.add(shoppingCartItem);
+
+        //Check to see if item is already in cart
+
+            //if item already in cart
+            if (shoppingCart.contains(productID)){
+                ShoppingCartItem item = shoppingCart.get(productID);
+                int newQuantity = item.getQuantity()+1;
+                item.setQuantity(newQuantity);
+                try(Connection connection = getConnection()) {
+                    query = "UPDATE shopping_cart SET quantity = ? WHERE user_id = ? AND product_id = ?";
+                    PreparedStatement preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setInt(1, newQuantity);
+                    preparedStatement.setInt(2, userID);
+                    int rows = preparedStatement.executeUpdate();
+                    if (rows == 0) {
+                        throw new SQLException("Update failed, no rows affected!");
+                    }
+                    shoppingCart.getItems().put(productID, item); //Add item with updated quantity back into cart
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
+            //If item not already in cart
+            else{
+                query = "SELECT * FROM products WHERE product_id = ?";
+                try(Connection connection = getConnection()) {
+                    PreparedStatement preparedStatement = connection.prepareStatement(query);
+                    preparedStatement.setInt(1, productID);
+
+                    ResultSet resultSet = preparedStatement.executeQuery();
+                    while(resultSet.next()){
+                        ShoppingCartItem shoppingCartItem = new ShoppingCartItem();
+                        shoppingCartItem.setProduct(mapRow(resultSet));
+                        shoppingCartItem.setQuantity(1);
+                        shoppingCart.add(shoppingCartItem);
+                    }
+                }
+                catch (SQLException e){
+                    throw new RuntimeException(e);
+                }
+            }
         return shoppingCart;
     }
+
+    @Override
+    public void clearCart(int userID) {
+        String query = "DELETE FROM shopping_cart WHERE user_id = ?";
+        try(Connection connection = getConnection()){
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, userID);
+            preparedStatement.executeUpdate();
+
+            int rows = preparedStatement.executeUpdate();
+
+            if (rows == 0) {
+                throw new SQLException("Delete failed, no rows affected!");
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     protected static Product mapRow(ResultSet resultSet) throws SQLException
     {
