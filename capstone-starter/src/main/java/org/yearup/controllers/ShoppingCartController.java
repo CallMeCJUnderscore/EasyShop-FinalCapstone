@@ -78,7 +78,7 @@ public class ShoppingCartController
             int userId = user.getId();
 
             // use the shoppingcartDao to get all items in the cart and return the cart
-            shoppingCart = shoppingCartDao.addProduct(userId, productID);
+            shoppingCart = shoppingCartDao.addItem(userId, productID);
         }
         catch(Exception e)
         {
@@ -94,7 +94,7 @@ public class ShoppingCartController
     // add a PUT method to update an existing product in the cart - the url should be
     // https://localhost:8080/cart/products/15 (15 is the productId to be updated)
     // the BODY should be a ShoppingCartItem - quantity is the only value that will be updated
-    @PutMapping("/products/{userID}")
+    @PutMapping("/products/{productID}")
     @PreAuthorize("hasRole('ROLE_USER')")
     public ShoppingCart updateItemQuantity(Principal principal, @PathVariable int productID, @RequestBody ShoppingCartItem shoppingCartItem){
         try
@@ -106,6 +106,7 @@ public class ShoppingCartController
             int userId = user.getId();
 
             // use the shoppingcartDao to get all items in the cart and return the cart
+            shoppingCartDao.updateItem(userId,productID , shoppingCartItem);
         }
         catch(Exception e)
         {
@@ -132,6 +133,7 @@ public class ShoppingCartController
             int userId = user.getId();
 
             // use the shoppingcartDao to get all items in the cart and return the cart
+            shoppingCartDao.clearCart(userId);
         }
         catch(Exception e)
         {
