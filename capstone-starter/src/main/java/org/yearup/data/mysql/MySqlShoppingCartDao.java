@@ -12,6 +12,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDao {
@@ -33,21 +35,19 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
 
 
     @Override
-    public ShoppingCart getByUserId(int userId) {
+    public ShoppingCart getByUserId(int userID) {
         ShoppingCart shoppingCart = new ShoppingCart();
-        String query = "SELECT p.* FROM shopping_cart s" +
-                "JOIN products p" +
-                "ON p.product_id = s.product_id " +
+        String query = "SELECT p.* FROM shopping_cart s " +
+                "JOIN products p " +
+                "ON s.product_id = p.product_id " +
                 "WHERE s.user_id = ?";
         try(Connection connection = getConnection()){
             PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, userId);
+            preparedStatement.setInt(1, userID);
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()){
-
-
                 ShoppingCartItem shoppingCartItem = new ShoppingCartItem();
                 shoppingCartItem.setProduct(mapRow(resultSet));
                 shoppingCart.add(shoppingCartItem);
@@ -57,6 +57,34 @@ public class MySqlShoppingCartDao extends MySqlDaoBase implements ShoppingCartDa
             e.printStackTrace();
         }
 
+        return shoppingCart;
+    }
+
+    @Override
+    public ShoppingCart addProduct(int userID, int productID) {
+        ShoppingCart shoppingCart = new ShoppingCart();
+        shoppingCart = this.getByUserId(userID);
+        for(ShoppingCartItem item : shoppingCart.getItems().values()){
+            if (item.getProductId() == productID){
+                item.setQuantity(item.getQuantity()+1);
+                return shoppingCart;
+            }
+        }
+        String query = "SELECT * FROM products WHERE product_id = ?";
+        try(Connection connection = getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, productID);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if(resultSet.next()){
+                ShoppingCartItem shoppingCartItem = new ShoppingCartItem();
+                shoppingCartItem.setProduct(mapRow(resultSet));
+                shoppingCart.add(shoppingCartItem);
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
         return shoppingCart;
     }
 
